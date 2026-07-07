@@ -1,0 +1,21 @@
+# Herramientas / IDE
+.claude/
+.vscode/
+.idea/
+*.iml
+
+# Backend (Maven)
+backend/target/
+*.class
+
+# Frontend (Node)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Logs
+*.log
+
+# Entorno
+.env
+.env.local
