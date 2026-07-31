@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
   servlet:
     context-path: /api
 
@@ -8,9 +8,9 @@ spring:
     name: sigaps-backend
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/sigaps_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC}
-    username: ${SPRING_DATASOURCE_USERNAME:sigaps_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:root}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${MYSQLHOST:localhost}:${MYSQLPORT:3306}/${MYSQLDATABASE:sigaps_db}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:${MYSQLUSER:sigaps_user}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${MYSQLPASSWORD:root}}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
