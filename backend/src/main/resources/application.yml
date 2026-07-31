@@ -33,6 +33,8 @@ spring:
     baseline-description: "Esquema inicial (db/schema.sql)"
     validate-on-migrate: false
     out-of-order: true
+    clean-disabled: false
+    clean-on-validation-error: true
 
   jackson:
     default-property-inclusion: non_null
