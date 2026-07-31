@@ -3,7 +3,7 @@ src/dedup.py) en filas listas para INSERT en la tabla `paciente`."""
 
 from __future__ import annotations
 
-from src.config import ES_HISTORICO, FUENTE_ORIGEN
+from src.config import ES_HISTORICO
 from src.dedup import PacienteResuelto
 
 
@@ -21,9 +21,9 @@ def construir_filas_paciente(pacientes_listos: dict[str, PacienteResuelto]) -> l
                 "telefono": paciente.telefono,
                 "direccion": paciente.direccion,
                 "distrito": paciente.distrito,
-                "tipo_seguro": "NINGUNO",
+                "tipo_seguro": paciente.tipo_seguro,
                 "es_historico": ES_HISTORICO,
-                "fuente_origen": FUENTE_ORIGEN,
+                "fuente_origen": paciente.fuente_origen,
                 "activo": True,
             }
         )

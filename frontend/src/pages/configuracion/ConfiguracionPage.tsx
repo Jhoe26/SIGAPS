@@ -1,7 +1,8 @@
-import { Eye, Pencil, Plug, Plus, ShieldCheck } from "lucide-react";
+import { Activity, Building2, Eye, Pencil, Plug, Plus, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
@@ -24,16 +25,25 @@ const INTEGRACIONES = ["HIS MINSA", "SIS", "RENIEC"];
 
 function ConfigRow({
   label,
+  badge,
   onVer,
   onEditar,
 }: {
   label: string;
+  badge?: string;
   onVer: () => void;
   onEditar: () => void;
 }) {
   return (
     <div className="flex items-center justify-between rounded-md px-2 py-2 hover:bg-secondary/50">
-      <span className="truncate text-sm text-foreground">{label}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="truncate text-sm text-foreground">{label}</span>
+        {badge && (
+          <Badge variant="secondary" className="shrink-0 bg-secondary text-muted-foreground">
+            {badge}
+          </Badge>
+        )}
+      </div>
       <div className="flex shrink-0 gap-1">
         <Button variant="ghost" size="icon" onClick={onVer} aria-label={`Ver ${label}`}>
           <Eye className="h-4 w-4" />
@@ -76,7 +86,10 @@ export default function ConfiguracionPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Centros de Salud</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Building2 className="h-4 w-4" />
+              Centros de Salud
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">
             {centros?.map((c) => (
@@ -108,7 +121,10 @@ export default function ConfiguracionPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Parámetros Clínicos</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Activity className="h-4 w-4" />
+              Parámetros Clínicos
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">
             {PARAMETROS_CLINICOS.map((p) => (
@@ -129,6 +145,7 @@ export default function ConfiguracionPage() {
               <ConfigRow
                 key={nombre}
                 label={nombre}
+                badge="Sin configurar"
                 onVer={() => toast.info(`${nombre}: integración aún no configurada`)}
                 onEditar={proximamente}
               />

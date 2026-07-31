@@ -4,7 +4,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +23,9 @@ import pe.sigaps.paciente.dto.CreatePacienteDto;
 import pe.sigaps.paciente.dto.PacienteResponseDto;
 import pe.sigaps.paciente.dto.UpdatePacienteDto;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 @RestController
 @RequestMapping("/pacientes")
 @RequiredArgsConstructor
@@ -28,8 +35,24 @@ public class PacienteController {
 
     @GetMapping
     public ApiResponse<Page<PacienteResponseDto>> buscar(
-            @RequestParam(required = false) String search, Pageable pageable) {
-        return ApiResponse.success(pacienteService.buscar(search, pageable));
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String programa,
+            Pageable pageable) {
+        return ApiResponse.success(pacienteService.buscar(search, estado, programa, pageable));
+    }
+
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportar(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String programa) {
+        byte[] csv = pacienteService.exportarCsv(search, estado, programa);
+        String nombreArchivo = "pacientes_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(nombreArchivo).build().toString())
+                .body(csv);
     }
 
     @GetMapping("/{id}")

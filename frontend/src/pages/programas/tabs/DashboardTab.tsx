@@ -91,14 +91,26 @@ export function DashboardTab({ config }: TabProps) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {tarjetas.map((t) => (
-          <Card key={t.label}>
-            <CardContent className="p-4">
-              <p className="text-2xl font-semibold leading-none text-foreground">{t.valor}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{t.label}</p>
-            </CardContent>
-          </Card>
-        ))}
+        {tarjetas.map((t) => {
+          const esTextoLargo = typeof t.valor === "string" && t.valor.length > 6;
+          return (
+            <Card key={t.label}>
+              <CardContent className="p-4">
+                <p
+                  className={
+                    esTextoLargo
+                      ? "truncate text-base font-semibold leading-tight text-foreground"
+                      : "text-2xl font-semibold leading-none text-foreground"
+                  }
+                  title={esTextoLargo ? String(t.valor) : undefined}
+                >
+                  {t.valor}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">{t.label}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

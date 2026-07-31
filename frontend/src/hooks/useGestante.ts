@@ -8,7 +8,7 @@ import type { CreateGestanteInput, Gestante, UpdateGestanteInput } from "@/types
 
 const QUERY_KEY = "gestante";
 
-export function useGestanteList(page: number, size = 10) {
+export function useGestanteList(page: number, size = 50) {
   return useQuery({
     queryKey: [QUERY_KEY, "lista", page, size],
     queryFn: async () => {

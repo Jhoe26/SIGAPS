@@ -49,3 +49,21 @@ def obtener_pacientes_por_dni(conn: Connection, dnis: list[str]) -> dict[str, in
 def obtener_vacunas_catalogo(conn: Connection) -> list[dict]:
     resultado = conn.execute(text("SELECT id, codigo, nombre, grupo_edad FROM vacuna_catalogo"))
     return [dict(fila._mapping) for fila in resultado]
+
+
+def contar_poblacion_acreditada(conn: Connection) -> int:
+    return int(conn.execute(text("SELECT COUNT(*) FROM poblacion_acreditada")).scalar_one())
+
+
+def obtener_acreditados_por_dni(conn: Connection, dnis: list[str]) -> dict[str, dict]:
+    """Mapea DNI -> fila del padrón EsSalud para los DNI del Excel que cruzan."""
+    if not dnis:
+        return {}
+    resultado = conn.execute(
+        text(
+            "SELECT dni, ap_paterno, ap_materno, nombres, fecha_nacimiento, sexo, direccion, distrito "
+            "FROM poblacion_acreditada WHERE dni IN :dnis"
+        ).bindparams(bindparam("dnis", expanding=True)),
+        {"dnis": dnis},
+    )
+    return {fila.dni: dict(fila._mapping) for fila in resultado}

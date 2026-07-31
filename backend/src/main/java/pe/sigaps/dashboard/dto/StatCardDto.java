@@ -5,6 +5,6 @@ public record StatCardDto(
         String label,
         long valor,
         String subtexto,
-        double tendenciaPct
+        long total
 ) {
 }

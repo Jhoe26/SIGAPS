@@ -5,7 +5,12 @@ export const pacienteSchema = z.object({
   apPaterno: z.string().min(1, "Obligatorio").max(60),
   apMaterno: z.string().min(1, "Obligatorio").max(60),
   nombres: z.string().min(1, "Obligatorio").max(80),
-  fechaNacimiento: z.string().min(1, "Obligatorio"),
+  fechaNacimiento: z
+    .string()
+    .min(1, "Obligatorio")
+    .refine((v) => !Number.isNaN(new Date(v).getTime()), "Fecha inválida")
+    .refine((v) => new Date(v).getFullYear() >= 1900, "La fecha no puede ser anterior a 1900")
+    .refine((v) => new Date(v) <= new Date(), "La fecha no puede ser futura"),
   sexo: z.enum(["M", "F"], { required_error: "Obligatorio" }),
   telefono: z.string().max(15).optional().or(z.literal("")),
   direccion: z.string().max(200).optional().or(z.literal("")),

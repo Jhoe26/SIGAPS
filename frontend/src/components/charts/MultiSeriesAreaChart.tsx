@@ -1,6 +1,7 @@
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { EmptyState } from "@/components/shared/EmptyState";
+import { formatEjeY } from "@/lib/chart-format";
 import type { SerieProgramaPunto } from "@/types/dashboard";
 
 interface Serie {
@@ -11,7 +12,7 @@ interface Serie {
 
 const SERIES: Serie[] = [
   { key: "cred", label: "CRED", color: "#2563EB" },
-  { key: "vacunacion", label: "Vacunación", color: "#047857" },
+  { key: "vacunacion", label: "Vacunación", color: "#16A34A" },
   { key: "anemia", label: "Anemia", color: "#EA580C" },
   { key: "gestacional", label: "Gestacional", color: "#BE123C" },
 ];
@@ -40,7 +41,14 @@ export function MultiSeriesAreaChart({ data }: MultiSeriesAreaChartProps) {
         </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
         <XAxis dataKey="mes" tick={{ fontSize: 12, fill: "#64748B" }} axisLine={false} tickLine={false} />
-        <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#64748B" }} axisLine={false} tickLine={false} width={28} />
+        <YAxis
+          allowDecimals={false}
+          tick={{ fontSize: 12, fill: "#64748B" }}
+          axisLine={false}
+          tickLine={false}
+          width={44}
+          tickFormatter={formatEjeY}
+        />
         <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#E2E8F0", fontSize: 12 }} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         {SERIES.map((s) => (

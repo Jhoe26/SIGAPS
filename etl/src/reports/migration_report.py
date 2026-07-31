@@ -4,6 +4,7 @@ descartadas por validación, y notas que requieren revisión manual humana)."""
 from __future__ import annotations
 
 import csv
+import datetime as dt
 import json
 import time
 from dataclasses import dataclass, field
@@ -17,6 +18,7 @@ from src.transformers.common import FilaDescartada
 @dataclass
 class ResumenHoja:
     hoja: str
+    tabla: str
     hoja_excel: Optional[str]
     extraidos: int
     migrados: int
@@ -32,11 +34,15 @@ class ReporteMigracion:
     def __init__(self, dry_run: bool) -> None:
         self.dry_run = dry_run
         self.inicio = time.monotonic()
+        self.fecha_migracion = dt.datetime.now().isoformat(timespec="seconds")
         self.resumenes: list[ResumenHoja] = []
         self.descartadas: list[FilaDescartada] = []
         self.notas_revision_manual: list[NotaRevisionManual] = []
         self.pacientes_insertados = 0
         self.pacientes_reutilizados = 0
+        self.total_acreditados_cargados = 0
+        self.pacientes_cruzados_padron = 0
+        self.pacientes_no_cruzados = 0
 
     def agregar_hoja(self, resumen: ResumenHoja, descartadas: list[FilaDescartada]) -> None:
         self.resumenes.append(resumen)
@@ -49,23 +55,41 @@ class ReporteMigracion:
         self.pacientes_insertados += insertados
         self.pacientes_reutilizados += max(total_dnis - insertados, 0)
 
+    def registrar_padron(self, total_acreditados_cargados: int, cruzados: int, no_cruzados: int) -> None:
+        self.total_acreditados_cargados = total_acreditados_cargados
+        self.pacientes_cruzados_padron = cruzados
+        self.pacientes_no_cruzados = no_cruzados
+
     def _duracion_total(self) -> float:
         return round(time.monotonic() - self.inicio, 2)
 
     def _a_dict(self) -> dict:
+        total_pacientes_unicos = self.pacientes_cruzados_padron + self.pacientes_no_cruzados
+        porcentaje_cruce = (
+            round(100 * self.pacientes_cruzados_padron / total_pacientes_unicos, 1) if total_pacientes_unicos else 0.0
+        )
+        registros_clinicos = {r.tabla: r.migrados for r in self.resumenes}
+        registros_clinicos["total"] = sum(r.migrados for r in self.resumenes)
+
         return {
+            "fecha_migracion": self.fecha_migracion,
             "modo": "dry-run (sin escribir en BD)" if self.dry_run else "migracion real",
-            "duracion_total_segundos": self._duracion_total(),
+            "duracion_segundos": self._duracion_total(),
+            "padron_acreditados": {"total_cargados": self.total_acreditados_cargados},
             "pacientes": {
+                "total_unicos": total_pacientes_unicos,
+                "cruzados_con_padron": self.pacientes_cruzados_padron,
+                "no_cruzados": self.pacientes_no_cruzados,
+                "porcentaje_cruce": porcentaje_cruce,
                 "insertados": self.pacientes_insertados,
                 "reutilizados_existentes": self.pacientes_reutilizados,
-                "requieren_revision_manual": sum(
-                    1 for n in self.notas_revision_manual if n.bloquea_migracion
-                ),
+                "requieren_revision_manual": len(self.notas_revision_manual),
             },
+            "registros_clinicos": registros_clinicos,
             "hojas": [
                 {
                     "hoja": r.hoja,
+                    "tabla": r.tabla,
                     "hoja_excel": r.hoja_excel,
                     "extraidos": r.extraidos,
                     "migrados": r.migrados,
@@ -83,6 +107,10 @@ class ReporteMigracion:
                 "migrados": sum(r.migrados for r in self.resumenes),
                 "descartados": sum(r.descartados for r in self.resumenes),
             },
+            "descartados": [
+                {"hoja": d.hoja, "fila_excel": d.fila_excel, "dni": d.dni, "motivo": d.motivo}
+                for d in self.descartadas
+            ],
             "requiere_revision_manual": [
                 {
                     "dni": n.dni,
@@ -98,7 +126,8 @@ class ReporteMigracion:
     def escribir(self, directorio_salida: Path) -> None:
         directorio_salida.mkdir(parents=True, exist_ok=True)
 
-        reporte_path = directorio_salida / "migration_report.json"
+        timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M")
+        reporte_path = directorio_salida / f"migration_report_{timestamp}.json"
         reporte_path.write_text(json.dumps(self._a_dict(), ensure_ascii=False, indent=2, default=str), encoding="utf-8")
 
         descartados_path = directorio_salida / "descartados.csv"

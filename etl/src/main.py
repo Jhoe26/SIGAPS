@@ -28,8 +28,17 @@ if sys.platform == "win32":
     except (AttributeError, ValueError):
         pass
 
-from src.config import cargar_config
-from src.db import crear_engine, obtener_vacunas_catalogo, transaccion
+from sqlalchemy import bindparam, text
+
+from src.config import FUENTE_ORIGEN, FUENTE_PADRON, PADRON_TOTAL_ESPERADO, cargar_config
+from src.db import (
+    contar_filas_migradas,
+    contar_poblacion_acreditada,
+    crear_engine,
+    obtener_acreditados_por_dni,
+    obtener_vacunas_catalogo,
+    transaccion,
+)
 from src.dedup import PacienteRegistry
 from src.extractors import (
     extract_anemia,
@@ -92,6 +101,49 @@ EXTRACTORES = {
 }
 
 
+def _total_migrado_previamente(conn) -> int:
+    total = 0
+    for tabla in ["paciente", *TABLA_POR_HOJA.values()]:
+        for fuente in (FUENTE_ORIGEN, FUENTE_PADRON):
+            total += contar_filas_migradas(conn, tabla, fuente)
+    return total
+
+
+def _confirmar_reemplazo_si_corresponde(engine) -> bool:
+    """Idempotencia global: si ya hay data de una corrida anterior, pregunta si
+    reemplazar todo. NO toca poblacion_acreditada (tabla de solo lectura que se
+    gestiona aparte, vía cargar_padron.py) para no arriesgar el padrón vigente."""
+    with engine.connect() as conn:
+        total = _total_migrado_previamente(conn)
+    if total == 0:
+        return True
+
+    respuesta = input(
+        f"Ya hay {total} filas migradas previamente (fuente_origen en "
+        f"'{FUENTE_ORIGEN}'/'{FUENTE_PADRON}'). ¿Reemplazar todo? [s/N]: "
+    ).strip().lower()
+    if respuesta != "s":
+        print("Cancelado por el usuario: no se modificó la BD.")
+        return False
+
+    with engine.begin() as conn:
+        for tabla in TABLA_POR_HOJA.values():
+            conn.execute(
+                text(f"DELETE FROM {tabla} WHERE fuente_origen IN :fuentes").bindparams(
+                    bindparam("fuentes", expanding=True)
+                ),
+                {"fuentes": [FUENTE_ORIGEN, FUENTE_PADRON]},
+            )
+        conn.execute(
+            text("DELETE FROM paciente WHERE fuente_origen IN :fuentes").bindparams(
+                bindparam("fuentes", expanding=True)
+            ),
+            {"fuentes": [FUENTE_ORIGEN, FUENTE_PADRON]},
+        )
+    print("Datos previos eliminados. Continuando con la migración desde cero.")
+    return True
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="ETL Excel BD_ENF_CAPIIIM_1.xlsx -> MySQL sigaps_db (Fase F)")
     parser.add_argument("--dry-run", action="store_true", help="Extrae y transforma pero NO escribe en la BD")
@@ -145,7 +197,7 @@ def main() -> int:
             return 1
         hojas_a_procesar = [h for h in HOJAS if h in pedidas]
 
-    output_dir = Path(args.output_dir).resolve() if args.output_dir else (Path(__file__).resolve().parent.parent / "output")
+    output_dir = Path(args.output_dir).resolve() if args.output_dir else (Path(__file__).resolve().parent.parent / "reports")
 
     print(f"Excel:      {config.excel_path}")
     print(f"BD:         {config.db_url_oculta}")
@@ -160,8 +212,21 @@ def main() -> int:
     try:
         with engine.connect() as conn_lectura:
             vacunas_catalogo = obtener_vacunas_catalogo(conn_lectura)
+            total_acreditados = contar_poblacion_acreditada(conn_lectura)
     except Exception as exc:  # noqa: BLE001 - queremos un mensaje claro, no un traceback crudo
         print(f"ERROR: no se pudo conectar a la BD ({config.db_url_oculta}): {exc}")
+        return 1
+
+    if total_acreditados != PADRON_TOTAL_ESPERADO:
+        print(
+            f"ERROR: poblacion_acreditada tiene {total_acreditados} registros, se esperaban "
+            f"{PADRON_TOTAL_ESPERADO}. Ejecuta primero 'python src/cargar_padron.py' para cargar "
+            "el padrón EsSalud antes de migrar el Excel de enfermería."
+        )
+        return 1
+    print(f"Padrón:     {total_acreditados} acreditados en poblacion_acreditada (OK)")
+
+    if not args.dry_run and not _confirmar_reemplazo_si_corresponde(engine):
         return 1
 
     # --- Fase 1: extraer + transformar TODAS las hojas primero. Necesitamos ver
@@ -191,14 +256,24 @@ def main() -> int:
         }
         print(f"   -> {len(resultado.filas_validas)} filas válidas, {len(resultado.descartadas)} descartadas")
 
-    # --- Fase 2: resolver pacientes (dedup + cross-referencia + reglas sexo/fecha) ---
-    print("\n>> Resolviendo pacientes (dedup por DNI, cross-referencia entre hojas)...")
-    pacientes_listos, notas_paciente = registry.resolver()
+    # --- Fase 2: cruzar contra el padrón EsSalud, luego resolver pacientes
+    # (dedup + cross-referencia entre hojas + reglas sexo/fecha para los que no cruzan) ---
+    dnis_excel = registry.dnis()
+    print(f"\n>> Cruzando {len(dnis_excel)} DNIs únicos del Excel contra poblacion_acreditada...")
+    with engine.connect() as conn_lectura:
+        acreditados = obtener_acreditados_por_dni(conn_lectura, dnis_excel)
+    print(f"   {len(acreditados)}/{len(dnis_excel)} DNIs cruzan con el padrón EsSalud")
+
+    print(">> Resolviendo pacientes (dedup por DNI, cross-referencia entre hojas)...")
+    pacientes_listos, notas_paciente = registry.resolver(acreditados)
     reporte.agregar_notas_manuales(notas_paciente)
     filas_paciente = construir_filas_paciente(pacientes_listos)
+    cruzados = sum(1 for p in pacientes_listos.values() if p.cruza_padron)
+    no_cruzados = len(pacientes_listos) - cruzados
+    reporte.registrar_padron(total_acreditados, cruzados, no_cruzados)
     print(
         f"   {len(filas_paciente)} pacientes únicos listos para migrar "
-        f"({sum(1 for n in notas_paciente if n.bloquea_migracion)} bloqueados por falta de sexo)"
+        f"(cruzan padrón: {cruzados}, sin cruce/Excel: {no_cruzados})"
     )
 
     # --- Fase 3: cargar pacientes (una sola transacción para toda la tabla paciente) ---
@@ -227,7 +302,7 @@ def main() -> int:
                     conn, tabla, resultado.filas_validas, mapa_dni_a_id, config.batch_size, args.dry_run
                 )
             if carga.omitido_por_idempotencia:
-                print(f"   OMITIDO: ya existen {carga.filas_ya_existentes} filas de fuente EXCEL_2024_2025 en {tabla}")
+                print(f"   OMITIDO: ya existen {carga.filas_ya_existentes} filas de fuente {FUENTE_ORIGEN} en {tabla}")
             else:
                 print(f"   Migrados: {carga.migrados}  (sin paciente resuelto: {carga.sin_paciente_resuelto})")
                 if carga.sin_paciente_resuelto:
@@ -243,6 +318,7 @@ def main() -> int:
         tiempo_total = meta["tiempo_extraccion_transformacion"] + (time.monotonic() - inicio_carga)
         resumen = ResumenHoja(
             hoja=hoja,
+            tabla=tabla,
             hoja_excel=meta["hoja_excel"],
             extraidos=resultado.extraidos,
             migrados=carga.migrados if carga else 0,

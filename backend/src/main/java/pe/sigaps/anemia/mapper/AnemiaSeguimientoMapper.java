@@ -74,20 +74,25 @@ public interface AnemiaSeguimientoMapper {
         );
     }
 
+    /** registradoPorId puede ser null en registros históricos migrados (el Excel no traía un
+     * usuario real, solo un rol genérico como "LIC ENFERMERIA"), pero igual traen fecha/valores
+     * reales -- por eso el gate es "hay algún dato", no solo "hay un usuario que lo registró". */
     private ControlEnfermeriaResponseDto mapControlEnfermeria(Function<Long, UsuarioResumenDto> resolverUsuario,
                                                                Long registradoPorId, LocalDate fecha,
                                                                BigDecimal hbObservado, BigDecimal hbCorregido) {
-        if (registradoPorId == null) {
+        if (registradoPorId == null && fecha == null && hbObservado == null && hbCorregido == null) {
             return ControlEnfermeriaResponseDto.VACIO;
         }
-        return new ControlEnfermeriaResponseDto(resolverUsuario.apply(registradoPorId), fecha, hbObservado, hbCorregido);
+        UsuarioResumenDto registradoPor = registradoPorId == null ? null : resolverUsuario.apply(registradoPorId);
+        return new ControlEnfermeriaResponseDto(registradoPor, fecha, hbObservado, hbCorregido);
     }
 
     private ControlMedicoResponseDto mapControlMedico(Function<Long, UsuarioResumenDto> resolverUsuario,
                                                         Long registradoPorId, LocalDate fecha, String observaciones) {
-        if (registradoPorId == null) {
+        if (registradoPorId == null && fecha == null && observaciones == null) {
             return ControlMedicoResponseDto.VACIO;
         }
-        return new ControlMedicoResponseDto(resolverUsuario.apply(registradoPorId), fecha, observaciones);
+        UsuarioResumenDto registradoPor = registradoPorId == null ? null : resolverUsuario.apply(registradoPorId);
+        return new ControlMedicoResponseDto(registradoPor, fecha, observaciones);
     }
 }

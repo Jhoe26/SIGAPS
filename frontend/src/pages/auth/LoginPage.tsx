@@ -25,15 +25,19 @@ export default function LoginPage() {
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-app px-4 py-8">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(ellipse_at_50%_35%,#1E3A8A_0%,#0F1729_75%)] px-4 py-8">
       <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-card shadow-lg">
-        <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] px-6 py-8 text-center text-white">
-          <Heart className="mx-auto h-8 w-8 fill-white" />
-          <p className="mt-3 text-[11px] font-semibold tracking-wide text-white/80">
-            MINISTERIO DE SALUD DEL PERÚ
-          </p>
-          <p className="text-2xl font-bold">SIGAPS</p>
-          <p className="mt-2 text-sm font-medium">Bienvenido</p>
+        <div className="bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] px-6 py-6 text-white">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20">
+              <Heart className="h-5 w-5 fill-white" />
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold tracking-wide text-white/80">MINISTERIO DE SALUD DEL PERÚ</p>
+              <p className="text-xl font-bold leading-tight">SIGAPS</p>
+            </div>
+          </div>
+          <p className="mt-4 text-lg font-semibold">Bienvenido</p>
           <p className="text-xs text-white/70">Ingresa tus credenciales para continuar</p>
         </div>
 
@@ -49,16 +53,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Contraseña</Label>
-                <button
-                  type="button"
-                  onClick={() => toast.info("Contacta al administrador del sistema para restablecerla")}
-                  className="text-xs font-medium text-active hover:underline"
-                >
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
+              <Label htmlFor="password">Contraseña</Label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -70,15 +65,24 @@ export default function LoginPage() {
                 />
               </div>
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => toast.info("Contacta al administrador del sistema para restablecerla")}
+                  className="text-xs font-medium text-active hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
             </div>
 
             <Button type="submit" className="w-full bg-active hover:bg-active/90" disabled={login.isPending}>
               {login.isPending ? "Ingresando..." : "Ingresar al sistema ›"}
             </Button>
           </form>
+          <p className="mt-4 text-center text-[11px] text-muted-foreground">Sistema oficial · MINSA Perú · v2.4.1</p>
         </div>
       </div>
-      <p className="mt-6 text-xs text-muted-foreground">Sistema oficial · MINSA Perú · v2.4.1</p>
     </div>
   );
 }

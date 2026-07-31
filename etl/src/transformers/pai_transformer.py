@@ -41,6 +41,13 @@ def _resolver_vacuna_id(texto_vacuna: Optional[str], catalogo_grupo: list[dict])
     return None
 
 
+def _vacuna_sin_clasificar_id(vacunas_catalogo: list[dict]) -> Optional[int]:
+    for fila in vacunas_catalogo:
+        if fila["codigo"] == "SIN_CLAS":
+            return fila["id"]
+    return None
+
+
 def _resolver_tipo_aplicacion(texto: Optional[str], default: str) -> str:
     if texto and "barrido" in texto.lower():
         return "BARRIDO"
@@ -81,13 +88,20 @@ def transformar_pai(
 
         texto_vacuna = normalizar_texto(valor(fila, columnas, "vacuna"))
         vacuna_id = _resolver_vacuna_id(texto_vacuna, catalogo_grupo)
+        observaciones = normalizar_texto(valor(fila, columnas, "observaciones"))
         if vacuna_id is None:
-            resultado.descartadas.append(
-                FilaDescartada(
-                    hoja_logica, fila_excel, dni, f"Vacuna no reconocida en catálogo ({grupo_edad}): '{texto_vacuna}'"
+            vacuna_id = _vacuna_sin_clasificar_id(vacunas_catalogo)
+            if vacuna_id is None:
+                resultado.descartadas.append(
+                    FilaDescartada(
+                        hoja_logica, fila_excel, dni,
+                        "Vacuna no reconocida y la vacuna SIN_CLAS no existe en el catálogo (aplicar migración V5)",
+                    )
                 )
-            )
-            continue
+                continue
+            if texto_vacuna:
+                nota = f"Vacuna original del Excel (no clasificada): '{texto_vacuna}'"
+                observaciones = f"{observaciones} | {nota}" if observaciones else nota
 
         registrar_paciente(registry, fila, columnas, hoja_logica, fila_excel, dni, fecha_referencia=fecha)
 
@@ -101,7 +115,7 @@ def transformar_pai(
                 "tipo_aplicacion": _resolver_tipo_aplicacion(
                     normalizar_texto(valor(fila, columnas, "tipo_aplicacion")), default_tipo_aplicacion
                 ),
-                "observaciones": normalizar_texto(valor(fila, columnas, "observaciones")),
+                "observaciones": observaciones,
                 **campos_fijos_migracion(),
             }
         )

@@ -100,61 +100,40 @@ public class DashboardService {
     private List<StatCardDto> construirStatCards() {
         LocalDateTime inicioHoy = LocalDate.now().atStartOfDay();
         LocalDateTime finHoy = LocalDate.now().atTime(LocalTime.MAX);
-        LocalDateTime inicioAyer = LocalDate.now().minusDays(1).atStartOfDay();
-        LocalDateTime finAyer = LocalDate.now().minusDays(1).atTime(LocalTime.MAX);
 
         YearMonth mesActual = YearMonth.now();
-        YearMonth mesAnterior = mesActual.minusMonths(1);
         LocalDateTime inicioMes = mesActual.atDay(1).atStartOfDay();
         LocalDateTime finMes = mesActual.atEndOfMonth().atTime(LocalTime.MAX);
-        LocalDateTime inicioMesAnt = mesAnterior.atDay(1).atStartOfDay();
-        LocalDateTime finMesAnt = mesAnterior.atEndOfMonth().atTime(LocalTime.MAX);
 
         long pacientesHoy = StatsUtil.contarEnRango(pacienteRepository, inicioHoy, finHoy);
-        long pacientesAyer = StatsUtil.contarEnRango(pacienteRepository, inicioAyer, finAyer);
-
         long atencionesHoy = contarTodasHoyOAyer(inicioHoy, finHoy);
-        long atencionesAyer = contarTodasHoyOAyer(inicioAyer, finAyer);
 
         long vacunasEsteMes = StatsUtil.contarEnRango(paiMenor12mRepository, inicioMes, finMes)
                 + StatsUtil.contarEnRango(pai12m5aRepository, inicioMes, finMes)
                 + StatsUtil.contarEnRango(paiMayor5aRepository, inicioMes, finMes)
                 + StatsUtil.contarEnRango(pai7a15aRepository, inicioMes, finMes);
-        long vacunasMesAnt = StatsUtil.contarEnRango(paiMenor12mRepository, inicioMesAnt, finMesAnt)
-                + StatsUtil.contarEnRango(pai12m5aRepository, inicioMesAnt, finMesAnt)
-                + StatsUtil.contarEnRango(paiMayor5aRepository, inicioMesAnt, finMesAnt)
-                + StatsUtil.contarEnRango(pai7a15aRepository, inicioMesAnt, finMesAnt);
 
         long controlesCred = credMenor5Repository.count() + credMayor5Repository.count();
-        long controlesCredEsteMes = StatsUtil.contarEnRango(credMenor5Repository, inicioMes, finMes)
-                + StatsUtil.contarEnRango(credMayor5Repository, inicioMes, finMes);
-        long controlesCredMesAnt = StatsUtil.contarEnRango(credMenor5Repository, inicioMesAnt, finMesAnt)
-                + StatsUtil.contarEnRango(credMayor5Repository, inicioMesAnt, finMesAnt);
-
         long gestantesActivas = StatsUtil.contarNoHistoricos(gestanteRepository);
-        long gestantesEsteMes = StatsUtil.contarEnRango(gestanteRepository, inicioMes, finMes);
-        long gestantesMesAnt = StatsUtil.contarEnRango(gestanteRepository, inicioMesAnt, finMesAnt);
-
         long anemiaEnTratamiento = anemiaSeguimientoRepository.countByEstado(EstadoAnemia.EN_TRATAMIENTO);
-        long casosAnemiaEsteMes = StatsUtil.contarEnRango(anemiaSeguimientoRepository, inicioMes, finMes);
-        long casosAnemiaMesAnt = StatsUtil.contarEnRango(anemiaSeguimientoRepository, inicioMesAnt, finMesAnt);
 
         return List.of(
                 new StatCardDto("pacientesHoy", "Pacientes Hoy", pacientesHoy,
-                        "Pacientes nuevos registrados hoy", tendencia(pacientesHoy, pacientesAyer)),
+                        "Pacientes nuevos registrados hoy", pacienteRepository.count()),
                 new StatCardDto("atencionesHoy", "Atenciones Hoy", atencionesHoy,
                         "Registros clínicos de hoy (sustituye \"Citas\": no hay módulo de citas)",
-                        tendencia(atencionesHoy, atencionesAyer)),
+                        contarTodasTotal()),
                 new StatCardDto("vacunasEsteMes", "Vacunas Este Mes", vacunasEsteMes,
                         "Dosis PAI aplicadas este mes (sustituye \"pendientes\": no hay esquema de vencimientos)",
-                        tendencia(vacunasEsteMes, vacunasMesAnt)),
+                        paiMenor12mRepository.count() + pai12m5aRepository.count()
+                                + paiMayor5aRepository.count() + pai7a15aRepository.count()),
                 new StatCardDto("controlesCred", "Controles CRED", controlesCred,
-                        "Total histórico de controles CRED", tendencia(controlesCredEsteMes, controlesCredMesAnt)),
+                        "Total histórico de controles CRED", controlesCred),
                 new StatCardDto("gestantesActivas", "Gestantes Activas", gestantesActivas,
-                        "Registros de gestante vigentes", tendencia(gestantesEsteMes, gestantesMesAnt)),
+                        "Registros de gestante vigentes", gestanteRepository.count()),
                 new StatCardDto("anemiaEnTratamiento", "Anemia en Tratamiento", anemiaEnTratamiento,
                         "Casos activos (sustituye \"Alertas\": no hay módulo de alertas)",
-                        tendencia(casosAnemiaEsteMes, casosAnemiaMesAnt))
+                        anemiaSeguimientoRepository.count())
         );
     }
 
@@ -168,6 +147,18 @@ public class DashboardService {
                 + StatsUtil.contarEnRango(paiMayor5aRepository, inicio, fin)
                 + StatsUtil.contarEnRango(pai7a15aRepository, inicio, fin)
                 + StatsUtil.contarEnRango(gestanteRepository, inicio, fin);
+    }
+
+    private long contarTodasTotal() {
+        return tamizajeHbRepository.count()
+                + credMenor5Repository.count()
+                + credMayor5Repository.count()
+                + anemiaSeguimientoRepository.count()
+                + paiMenor12mRepository.count()
+                + pai12m5aRepository.count()
+                + paiMayor5aRepository.count()
+                + pai7a15aRepository.count()
+                + gestanteRepository.count();
     }
 
     private List<SerieProgramaDto> construirAtencionesPorPrograma() {
@@ -224,10 +215,4 @@ public class DashboardService {
         return Character.toUpperCase(nombre.charAt(0)) + nombre.substring(1).toLowerCase(ES);
     }
 
-    private double tendencia(long actual, long anterior) {
-        if (anterior == 0) {
-            return actual > 0 ? 100.0 : 0.0;
-        }
-        return Math.round(((actual - anterior) * 100.0 / anterior) * 10) / 10.0;
-    }
 }

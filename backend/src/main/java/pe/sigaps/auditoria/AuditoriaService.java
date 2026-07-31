@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pe.sigaps.auditoria.dto.AuditLogResponseDto;
 import pe.sigaps.auditoria.mapper.AuditLogMapper;
@@ -41,6 +42,17 @@ public class AuditoriaService {
         log.setIpOrigen(ipOrigen);
         log.setUserAgent(userAgent);
         auditLogRepository.save(log);
+    }
+
+    /**
+     * Auditoría de una consulta de solo lectura (p.ej. GET /acreditados/{dni}). Corre en una
+     * transacción propia (REQUIRES_NEW) para que el registro se conserve aunque el método que
+     * originó la consulta termine lanzando una excepción y haciendo rollback (p.ej. 404).
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registrarConsulta(String tabla, Long registroId, String valoresDespues,
+                                   Long usuarioId, String ipOrigen, String userAgent) {
+        registrar(tabla, registroId, AccionAuditoria.CONSULTA, null, valoresDespues, usuarioId, ipOrigen, userAgent);
     }
 
     private Specification<AuditLog> construirFiltro(String tabla, Long registroId, Long usuarioId,

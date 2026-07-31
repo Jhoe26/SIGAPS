@@ -8,15 +8,6 @@ import { iniciales } from "@/lib/edad";
 import { useLogout } from "@/hooks/useAuth";
 import { useAuthStore } from "@/stores/authStore";
 
-const ROL_LABELS: Record<string, string> = {
-  ADMIN: "Administrador",
-  ENFERMERA: "Enfermera(o)",
-  MEDICO: "Médico",
-  OBSTETRA: "Obstetra",
-  SUPERVISOR: "Supervisor",
-  SISTEMA: "Sistema",
-};
-
 const itemClasses = (isActive: boolean, collapsed: boolean) =>
   cn(
     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-white/5 hover:text-sidebar-foreground",
@@ -37,13 +28,15 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "hidden shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex",
-        collapsed ? "w-[72px]" : "w-[260px]"
+        "hidden h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:flex",
+        collapsed ? "w-16" : "w-[232px]"
       )}
     >
       <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
         <div className="flex items-center gap-2 overflow-hidden">
-          <Heart className="h-6 w-6 shrink-0 fill-active text-active" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-active">
+            <Heart className="h-4 w-4 fill-white text-white" />
+          </div>
           {!collapsed && (
             <div className="min-w-0">
               <p className="truncate text-sm font-bold leading-tight">SIGAPS</p>
@@ -114,14 +107,14 @@ export function Sidebar() {
       </nav>
 
       {user && (
-        <div className="border-t border-white/10 p-3">
+        <div className="mt-auto border-t border-white/10 p-3">
           <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-active text-sm font-semibold text-white">
               {iniciales(user.nombreCompleto)}
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{ROL_LABELS[user.rol] ?? user.rol}</p>
+                <p className="truncate text-sm font-bold">{user.nombreCompleto}</p>
                 <p className="truncate text-xs text-sidebar-foreground/60">{user.email ?? "Sin correo registrado"}</p>
               </div>
             )}

@@ -1,11 +1,13 @@
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { DxNutricionalBadge } from "@/components/shared/DxNutricionalBadge";
 import { Pagination } from "@/components/shared/Pagination";
 import { TablaRegistrosClinicos, type FilaClinica } from "@/components/shared/TablaRegistrosClinicos";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCredMayor5List, useCredMenor5List, useEliminarCredMayor5, useEliminarCredMenor5 } from "@/hooks/useCred";
+import { CredDetalleDialog } from "@/pages/programas/pacientes/CredDetalleDialog";
 import { CredMayor5FormDialog } from "@/pages/programas/pacientes/CredMayor5FormDialog";
 import { CredMenor5FormDialog } from "@/pages/programas/pacientes/CredMenor5FormDialog";
 import { cn } from "@/lib/utils";
@@ -16,8 +18,6 @@ interface SectionProps {
   senalNuevoRegistro: number;
 }
 
-const DX_SANOS = new Set(["NORMAL", "RECUPERADO"]);
-
 export function CredPacientesSection({ senalNuevoRegistro }: SectionProps) {
   const usuarioActualId = useAuthStore((s) => s.user?.id);
   const [submodulo, setSubmodulo] = useState<"menor5" | "mayor5">("menor5");
@@ -25,6 +25,8 @@ export function CredPacientesSection({ senalNuevoRegistro }: SectionProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [registroMenor5, setRegistroMenor5] = useState<CredMenor5 | null>(null);
   const [registroMayor5, setRegistroMayor5] = useState<CredMayor5 | null>(null);
+  const [detalleOpen, setDetalleOpen] = useState(false);
+  const [registroEnVista, setRegistroEnVista] = useState<CredMenor5 | CredMayor5 | null>(null);
 
   const listaMenor5 = useCredMenor5List(page);
   const listaMayor5 = useCredMayor5List(page);
@@ -55,8 +57,9 @@ export function CredPacientesSection({ senalNuevoRegistro }: SectionProps) {
           pacienteFechaNacimiento: r.paciente.fechaNacimiento,
           profesionalNombre: r.profesional?.nombreCompleto ?? null,
           fecha: r.fecha,
-          estado: r.esHistorico ? "inactivo" : DX_SANOS.has(r.dxNutricional) ? "activo" : "pendiente",
-          estadoEtiqueta: r.esHistorico ? "Histórico" : r.dxNutricional.replaceAll("_", " "),
+          estado: "pendiente",
+          estadoBadge: <DxNutricionalBadge dxNutricional={r.dxNutricional} />,
+          extra: r.numControl ? `Control N°${r.numControl}` : "—",
           puedeEditar: !r.esHistorico && r.registradoPor.id === usuarioActualId,
         }))
       : (listaMayor5.data?.content ?? []).map((r) => ({
@@ -66,8 +69,9 @@ export function CredPacientesSection({ senalNuevoRegistro }: SectionProps) {
           pacienteFechaNacimiento: r.paciente.fechaNacimiento,
           profesionalNombre: r.profesional?.nombreCompleto ?? null,
           fecha: r.fecha,
-          estado: r.esHistorico ? "inactivo" : DX_SANOS.has(r.dxNutricional) ? "activo" : "pendiente",
-          estadoEtiqueta: r.esHistorico ? "Histórico" : r.dxNutricional.replaceAll("_", " "),
+          estado: "pendiente",
+          estadoBadge: <DxNutricionalBadge dxNutricional={r.dxNutricional} />,
+          extra: r.numControl ? `Control N°${r.numControl}` : "—",
           puedeEditar: !r.esHistorico && r.registradoPor.id === usuarioActualId,
         }));
 
@@ -84,6 +88,15 @@ export function CredPacientesSection({ senalNuevoRegistro }: SectionProps) {
       setRegistroMayor5(listaMayor5.data?.content.find((r) => r.id === id) ?? null);
     }
     setDialogOpen(true);
+  };
+
+  const abrirVista = (id: number) => {
+    const registro =
+      submodulo === "menor5"
+        ? listaMenor5.data?.content.find((r) => r.id === id)
+        : listaMayor5.data?.content.find((r) => r.id === id);
+    setRegistroEnVista(registro ?? null);
+    setDetalleOpen(true);
   };
 
   return (
@@ -123,6 +136,8 @@ export function CredPacientesSection({ senalNuevoRegistro }: SectionProps) {
             isLoading={isLoading}
             onEditar={abrirEdicion}
             onEliminar={confirmarEliminar}
+            onVer={abrirVista}
+            columnaExtra="Control"
             emptyMessage="Sin controles CRED registrados"
           />
         </CardContent>
@@ -135,6 +150,7 @@ export function CredPacientesSection({ senalNuevoRegistro }: SectionProps) {
       ) : (
         <CredMayor5FormDialog open={dialogOpen} onOpenChange={setDialogOpen} registro={registroMayor5} />
       )}
+      <CredDetalleDialog open={detalleOpen} onOpenChange={setDetalleOpen} registro={registroEnVista} />
     </div>
   );
 }

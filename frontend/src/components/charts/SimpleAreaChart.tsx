@@ -1,6 +1,7 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { EmptyState } from "@/components/shared/EmptyState";
+import { formatEjeY } from "@/lib/chart-format";
 
 interface PuntoSerie {
   mes: string;
@@ -31,7 +32,14 @@ export function SimpleAreaChart({ data, color, emptyMessage }: SimpleAreaChartPr
         </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
         <XAxis dataKey="mes" tick={{ fontSize: 12, fill: "#64748B" }} axisLine={false} tickLine={false} />
-        <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#64748B" }} axisLine={false} tickLine={false} width={28} />
+        <YAxis
+          allowDecimals={false}
+          tick={{ fontSize: 12, fill: "#64748B" }}
+          axisLine={false}
+          tickLine={false}
+          width={44}
+          tickFormatter={formatEjeY}
+        />
         <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#E2E8F0", fontSize: 12 }} />
         <Area type="monotone" dataKey="valor" stroke={color} strokeWidth={2} fill={`url(#fill-${color.replace("#", "")})`} />
       </AreaChart>

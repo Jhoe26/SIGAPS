@@ -8,17 +8,37 @@ import type { CreatePacienteInput, Paciente, UpdatePacienteInput } from "@/types
 
 const QUERY_KEY = "pacientes";
 
-export function usePacientesQuery(search: string, page: number) {
+export function usePacientesQuery(search: string, page: number, estado?: string, programa?: string) {
   return useQuery({
-    queryKey: [QUERY_KEY, search, page],
+    queryKey: [QUERY_KEY, search, page, estado, programa],
     queryFn: async () => {
       const { data } = await api.get<ApiResponse<Page<Paciente>>>("/pacientes", {
-        params: { search: search || undefined, page, size: 10 },
+        params: { search: search || undefined, estado: estado || undefined, programa: programa || undefined, page, size: 50 },
       });
       return data.data;
     },
     placeholderData: (prev) => prev,
   });
+}
+
+function nombreArchivoDesdeContentDisposition(contentDisposition: string | undefined): string | null {
+  if (!contentDisposition) return null;
+  const match = /filename="?([^"]+)"?/.exec(contentDisposition);
+  return match ? match[1] : null;
+}
+
+export async function exportarPacientes(search: string, estado?: string, programa?: string) {
+  const response = await api.get("/pacientes/exportar", {
+    params: { search: search || undefined, estado: estado || undefined, programa: programa || undefined },
+    responseType: "blob",
+  });
+  const nombreArchivo = nombreArchivoDesdeContentDisposition(response.headers["content-disposition"]) ?? "pacientes.csv";
+  const url = URL.createObjectURL(response.data as Blob);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = nombreArchivo;
+  enlace.click();
+  URL.revokeObjectURL(url);
 }
 
 export function useCrearPaciente() {

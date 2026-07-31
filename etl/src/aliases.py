@@ -1,12 +1,9 @@
 """Alias de columnas y de nombres de vacuna.
 
-IMPORTANTE: no tenemos el Excel real disponible al escribir este ETL (no
-está presente en el repo todavía). Estas listas son el mejor esfuerzo según
-las convenciones típicas de planillas de enfermería en Perú y los nombres
-de columna del schema. **Revisar y ajustar tras el primer `--dry-run`**
-contra el archivo real: si una hoja reporta muchas filas en
-"requiere_revision_manual" por "columna no encontrada", casi siempre es
-cuestión de agregar el texto exacto del encabezado aquí.
+Ajustado contra el archivo real de la Fase G (`db/BD_ENF_CAPIIIM_LIMPIO.xlsx`,
+encabezados de una sola fila, sin celdas combinadas). Estructura estándar
+confirmada por hoja: PROFESIONAL, FECHA, DNI, AP_PATERNO, AP_MATERNO,
+NOMBRES, FECHA_NAC, EDAD_A, EDAD_M, EDAD_D, TELEFONO + campos específicos.
 
 Los candidatos se comparan sin tildes/mayúsculas y por sub-string (ver
 excel_reader.encontrar_columna), así que no hace falta el texto exacto, solo
@@ -15,17 +12,17 @@ una porción reconocible.
 
 from __future__ import annotations
 
-# --- Alias de hoja (nombre real del libro puede variar levemente) ---
+# --- Alias de hoja (nombres reales confirmados en el libro) ---
 NOMBRES_HOJA = {
     "tamizaje": ["TAMIZAJE"],
     "anemia": ["ANEMIA"],
-    "cred_menor5": ["CREDMENOR 5", "CRED MENOR 5", "CRED MENOR5"],
-    "cred_mayor5": ["CRED MAYOR 5", "CREDMAYOR 5", "CRED MAYOR5"],
-    "pai_menor12m": ["PAI < 12M", "PAI <12M", "PAI MENOR 12M"],
-    "pai_12m_5a": ["PAI > 12M-<5A", "PAI 12M-5A", "PAI >12M-<5A"],
-    "pai_mayor5a": ["PAI >5A (corrupta)", "PAI >5A", "PAI MAYOR 5A"],
-    "pai_7a_15a": ["PAI>7A-<15A (2)", "PAI>7A-<15A", "PAI 7A-15A"],
-    "gestante": ["GTE", "GESTANTE"],
+    "cred_menor5": ["CRED_MENOR_5", "CRED MENOR 5", "CREDMENOR 5", "CRED MENOR5"],
+    "cred_mayor5": ["CRED_MAYOR_5", "CRED MAYOR 5", "CREDMAYOR 5", "CRED MAYOR5"],
+    "pai_menor12m": ["PAI_MENOR_12M", "PAI MENOR 12M", "PAI < 12M", "PAI <12M"],
+    "pai_12m_5a": ["PAI_12M_A_5A", "PAI 12M A 5A", "PAI > 12M-<5A", "PAI 12M-5A"],
+    "pai_mayor5a": ["PAI_MAYOR_5A", "PAI MAYOR 5A", "PAI >5A (corrupta)", "PAI >5A"],
+    "pai_7a_15a": ["PAI_7A_A_15A", "PAI 7A A 15A", "PAI>7A-<15A (2)", "PAI>7A-<15A", "PAI 7A-15A"],
+    "gestante": ["GESTANTE", "GTE"],
 }
 
 # --- Campos de identificación de paciente, comunes a casi todas las hojas ---
@@ -38,10 +35,13 @@ COLUMNAS_PACIENTE_COMUN = {
         "paciente",
         "nombre del paciente",
     ],
-    "ap_paterno": ["apellido paterno", "ap paterno"],
-    "ap_materno": ["apellido materno", "ap materno"],
+    "ap_paterno": ["ap paterno", "apellido paterno"],
+    "ap_materno": ["ap materno", "apellido materno"],
     "nombres": ["nombres"],
-    "fecha_nacimiento": ["fecha nacimiento", "fecha de nacimiento", "f nacimiento", "fec nac", "nacio"],
+    "fecha_nacimiento": ["fecha nac", "fecha nacimiento", "fecha de nacimiento", "f nacimiento", "fec nac"],
+    "edad_anios": ["edad a", "edad anios", "edad años"],
+    "edad_meses": ["edad m", "edad meses"],
+    "edad_dias": ["edad d", "edad dias"],
     "sexo": ["sexo", "genero"],
     "telefono": ["telefono", "celular", "nro celular", "telf", "numero celular"],
     "direccion": ["direccion", "domicilio"],
@@ -49,82 +49,67 @@ COLUMNAS_PACIENTE_COMUN = {
 }
 
 # --- Quién atendió (solo primer nombre en el Excel; regla: NO crear profesional) ---
-COLUMNA_PROFESIONAL = ["responsable", "profesional", "enfermero", "enfermera", "quien atendio", "atendido por"]
+COLUMNA_PROFESIONAL = ["profesional", "responsable", "enfermero", "enfermera", "quien atendio", "atendido por"]
 
 ALIASES_TAMIZAJE = {
     **COLUMNAS_PACIENTE_COMUN,
-    "fecha": ["fecha tamizaje", "fecha de tamizaje", "fecha"],
-    "edad_anios": ["edad anios", "edad años", "anios"],
-    "edad_meses": ["edad meses", "meses"],
-    "edad_dias": ["edad dias", "dias"],
+    "fecha": ["fecha"],
+    "hb_observado": ["hb observado", "hb obs", "hemoglobina"],
+    "hb_corregido": ["hb corregido", "hb corr"],
+    "diagnostico": ["diagnostico", "dx"],
     "tipo_dosaje": ["tipo dosaje", "dosaje", "tipo de dosaje"],
-    "hb_observado": ["hb observado", "hb obs", "hemoglobina", "hb"],
-    "observaciones": ["observaciones", "obs"],
+    "observaciones": ["observaciones"],
     "profesional": COLUMNA_PROFESIONAL,
 }
 
 ALIASES_ANEMIA = {
     **COLUMNAS_PACIENTE_COMUN,
-    "fecha_inicio": ["fecha inicio", "fecha de inicio", "fecha"],
-    "hb_inicial_obs": ["hb inicial", "hb inicial observado", "hb obs inicial"],
-    "dx_inicial": ["dx inicial", "diagnostico inicial", "clasificacion"],
-    "tipo_hierro": ["tipo hierro", "tipo de hierro", "hierro indicado"],
-    "dosis_indicada": ["dosis indicada", "dosis"],
-    # Control 1
-    "c1_enf_fecha": ["1er control enfermeria fecha", "control 1 enfermeria fecha", "1 control fecha"],
-    "c1_hb_obs": ["1er control enfermeria hb", "control 1 hb", "1 control hb observado"],
-    "c1_med_fecha": ["1er control medico fecha", "control 1 medico fecha"],
-    "c1_med_obs": ["1er control medico observaciones", "control 1 medico obs"],
-    # Control 2
-    "c2_enf_fecha": ["2do control enfermeria fecha", "control 2 enfermeria fecha", "2 control fecha"],
-    "c2_hb_obs": ["2do control enfermeria hb", "control 2 hb"],
-    "c2_med_fecha": ["2do control medico fecha", "control 2 medico fecha"],
-    "c2_med_obs": ["2do control medico observaciones", "control 2 medico obs"],
-    # Control 3
-    "c3_enf_fecha": ["3er control enfermeria fecha", "control 3 enfermeria fecha", "3 control fecha"],
-    "c3_hb_obs": ["3er control enfermeria hb", "control 3 hb"],
-    "estado": ["estado", "condicion"],
-    "observaciones": ["observaciones", "obs"],
+    "fecha": ["fecha"],
+    "hb_observado": ["hb observado", "hb obs", "hemoglobina"],
+    "hb_corregido": ["hb corregido", "hb corr"],
+    "clasificacion": ["clasificacion", "diagnostico"],
+    "observaciones": ["observaciones"],
     "profesional": COLUMNA_PROFESIONAL,
 }
 
 ALIASES_CRED_MENOR5 = {
     **COLUMNAS_PACIENTE_COMUN,
     "fecha": ["fecha control", "fecha de control", "fecha"],
-    "edad_puntual": ["edad puntual", "edad"],
+    "edad_puntual": ["edad puntual"],
     "num_control": ["nro control", "n control", "numero de control"],
-    "peso": ["peso"],
-    "talla": ["talla"],
+    "peso": ["peso kg", "peso"],
+    "talla": ["talla cm", "talla"],
     "perimetro_cefalico": ["perimetro cefalico", "pc"],
     "dx_nutricional": ["dx nutricional", "diagnostico nutricional"],
     "lactancia_hasta_6m": ["lactancia", "lactancia materna exclusiva"],
     "grado_riesgo": ["grado riesgo", "riesgo"],
-    "observaciones": ["observaciones", "obs"],
+    "observaciones": ["observaciones"],
     "profesional": COLUMNA_PROFESIONAL,
 }
 
 ALIASES_CRED_MAYOR5 = {
     **COLUMNAS_PACIENTE_COMUN,
     "fecha": ["fecha control", "fecha de control", "fecha"],
-    "edad_puntual": ["edad puntual", "edad"],
+    "edad_puntual": ["edad puntual"],
     "num_control": ["nro control", "n control", "numero de control"],
-    "peso": ["peso"],
-    "talla": ["talla"],
+    "peso": ["peso kg", "peso"],
+    "talla": ["talla m", "talla"],
+    "imc": ["imc"],
     "riesgo_nutricional": ["riesgo nutricional"],
     "dx_nutricional": ["dx nutricional", "diagnostico nutricional"],
-    "observaciones": ["observaciones", "obs"],
+    "observaciones": ["observaciones"],
     "profesional": COLUMNA_PROFESIONAL,
 }
 
 # Las 4 hojas PAI comparten estructura (una fila = una dosis aplicada).
 ALIASES_PAI_COMUN = {
     **COLUMNAS_PACIENTE_COMUN,
-    "vacuna": ["vacuna", "biologico"],
+    "vacuna": ["vacuna aplicada", "vacuna", "biologico"],
     "num_dosis": ["nro dosis", "n dosis", "dosis"],
     "fecha_aplicacion": ["fecha aplicacion", "fecha de aplicacion", "fecha"],
     "lote": ["lote"],
     "tipo_aplicacion": ["tipo aplicacion", "regular barrido"],
-    "observaciones": ["observaciones", "obs"],
+    "observaciones": ["observaciones"],
     "profesional": COLUMNA_PROFESIONAL,
 }
 
@@ -138,13 +123,17 @@ ALIASES_GESTANTE = {
     "hepb_2_fecha": ["hepb 2", "hepatitis b 2"],
     "hepb_3_fecha": ["hepb 3", "hepatitis b 3"],
     "tdpa_fecha": ["tdpa"],
-    "observaciones": ["observaciones", "obs"],
+    "observaciones": ["observaciones"],
     "profesional": COLUMNA_PROFESIONAL,
 }
 
 # --- Vacuna Excel (texto libre) -> codigo de vacuna_catalogo ---
 # Cada extractor de PAI solo busca dentro del subconjunto de su grupo_edad,
-# así "DPT" no se confunde entre DPT_REF (12M_5A) y DPT_BAR (7A_15A).
+# así "DPT" no se confunde entre DPT_REF (12M_5A) y DPT_BAR (7A_15A). El
+# texto real (PAI_12M_A_5A.VACUNA_APLICADA) es libre y muy heterogéneo
+# (combos "1°SPR-VARICELA-3°NEUMOCOCO", abreviaturas, errores de tipeo); lo
+# que no matchea ningún alias cae a la vacuna SIN_CLAS (ver V5 migration)
+# conservando el texto original en observaciones, no se descarta la fila.
 VACUNA_ALIASES: dict[str, list[str]] = {
     "PTV": ["pentavalente", "penta"],
     "RTV": ["rotavirus", "rota"],
@@ -152,7 +141,7 @@ VACUNA_ALIASES: dict[str, list[str]] = {
     "NEU": ["neumococo", "neumo"],
     "INF_PED": ["influenza pediatrica", "influenza"],
     "SPR": ["spr", "sarampion paperas rubeola", "sarampion"],
-    "AMA": ["antiamarilica", "fiebre amarilla", "amarilica"],
+    "AMA": ["antiamarilica", "fiebre amarilla", "amarilica", "ama"],
     "DPT_REF": ["dpt refuerzo", "dpt"],
     "VAR": ["varicela"],
     "VPH": ["vph", "papiloma"],

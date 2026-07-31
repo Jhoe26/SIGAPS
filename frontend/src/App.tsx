@@ -21,6 +21,7 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="pacientes" element={<PacientesListPage />} />
+          <Route path="pacientes/nuevo" element={<PacientesListPage />} />
           <Route path="programas/:clave" element={<ProgramaPage />} />
           <Route path="profesionales" element={<ProfesionalesPage />} />
           <Route path="reportes" element={<ReportesPage />} />

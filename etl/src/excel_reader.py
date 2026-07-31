@@ -108,7 +108,7 @@ def listar_hojas(path) -> list[str]:
     return hojas
 
 
-def leer_hoja_aplanada(path, sheet_name: str, header_rows: int = 3) -> pd.DataFrame:
+def leer_hoja_aplanada(path, sheet_name: str, header_rows: int = 1) -> pd.DataFrame:
     """Lee una hoja completa y devuelve un DataFrame con columnas aplanadas.
 
     Todas las celdas quedan como texto/objeto crudo (sin castear tipos):
@@ -145,7 +145,11 @@ def leer_hoja_aplanada(path, sheet_name: str, header_rows: int = 3) -> pd.DataFr
             filas.append(valores)
             indices_fila.append(fila)
 
-        df = pd.DataFrame(filas, columns=columnas)
+        # dtype=object evita que pandas infiera un dtype datetime64 por columna
+        # (lo que convertiría celdas vacías de None a NaT) o cualquier otra
+        # coerción de tipo por columna: cada celda queda tal cual la devolvió
+        # openpyxl, que es lo que normalizers.py espera (None = vacío).
+        df = pd.DataFrame(filas, columns=columnas, dtype=object)
         df.insert(0, "_excel_row", indices_fila)
         return df
     finally:

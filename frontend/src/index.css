@@ -25,7 +25,7 @@
 
     /* SIGAPS (Figma): tokens propios, en formato "R G B" para soportar bg-x/opacidad */
     --sidebar-bg: 15 23 41; /* #0F1729 */
-    --sidebar-fg: 226 232 240; /* #E2E8F0 */
+    --sidebar-fg: 203 213 225; /* #CBD5E1 */
     --active: 37 99 235; /* #2563EB */
     --bg-app: 241 245 249; /* #F1F5F9 */
   }
@@ -37,5 +37,11 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@media print {
+  body {
+    background: white;
   }
 }

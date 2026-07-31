@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { EmptyState } from "@/components/shared/EmptyState";
+import { formatEjeY } from "@/lib/chart-format";
 import type { SerieProgramaPunto } from "@/types/dashboard";
 
 export interface SerieDefinicion {
@@ -26,7 +27,14 @@ export function MultiSeriesBarChart({ data, series }: MultiSeriesBarChartProps) 
       <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
         <XAxis dataKey="mes" tick={{ fontSize: 12, fill: "#64748B" }} axisLine={false} tickLine={false} />
-        <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#64748B" }} axisLine={false} tickLine={false} width={28} />
+        <YAxis
+          allowDecimals={false}
+          tick={{ fontSize: 12, fill: "#64748B" }}
+          axisLine={false}
+          tickLine={false}
+          width={44}
+          tickFormatter={formatEjeY}
+        />
         <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#E2E8F0", fontSize: 12 }} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         {series.map((s) => (

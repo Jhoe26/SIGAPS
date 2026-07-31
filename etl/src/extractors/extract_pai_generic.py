@@ -17,7 +17,7 @@ from src.excel_reader import encontrar_hoja, leer_hoja_aplanada, listar_hojas
 from src.extractors.base import ExtraccionHoja, columnas_no_encontradas, resolver_columnas
 from src.normalizers import normalizar_dni
 
-OBLIGATORIAS = ["dni", "vacuna", "fecha_aplicacion"]
+OBLIGATORIAS = ["dni", "fecha_aplicacion"]  # 'vacuna' no viene en 3/4 hojas reales (fallback a SIN_CLAS, ver pai_transformer)
 
 
 def _filtrar_filas_con_dni_valido(df: pd.DataFrame, columna_dni: Optional[str]) -> tuple[pd.DataFrame, int]:

@@ -7,7 +7,7 @@ from src.excel_reader import encontrar_hoja, leer_hoja_aplanada, listar_hojas
 from src.extractors.base import ExtraccionHoja, columnas_no_encontradas, resolver_columnas
 
 HOJA_LOGICA = "cred_mayor5"
-OBLIGATORIAS = ["dni", "fecha", "dx_nutricional"]
+OBLIGATORIAS = ["dni", "fecha"]  # dx_nutricional no viene en el Excel real (default 'NORMAL', ver cred_transformer)
 
 
 def extraer(path) -> Optional[ExtraccionHoja]:

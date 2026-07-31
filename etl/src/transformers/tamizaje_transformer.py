@@ -6,7 +6,6 @@ from src.dedup import PacienteRegistry
 from src.extractors.base import ExtraccionHoja, valor
 from src.normalizers import (
     calcular_edad,
-    calcular_hb_corregido,
     derivar_grupo_etario_tamizaje,
     normalizar_decimal,
     normalizar_fecha,
@@ -80,8 +79,17 @@ def transformar(extraccion: Optional[ExtraccionHoja], registry: PacienteRegistry
         anios, meses, dias = edad
 
         hb_observado = normalizar_decimal(valor(fila, columnas, "hb_observado"))
+        hb_corregido = normalizar_decimal(valor(fila, columnas, "hb_corregido"))
 
         registrar_paciente(registry, fila, columnas, HOJA_LOGICA, fila_excel, dni, fecha_referencia=fecha)
+
+        # tamizaje_hb no tiene columna dx_anemia: el DIAGNOSTICO del Excel
+        # (ya calculado, no se recalcula) se conserva en observaciones.
+        diagnostico = normalizar_texto(valor(fila, columnas, "diagnostico"))
+        observaciones = normalizar_texto(valor(fila, columnas, "observaciones"))
+        if diagnostico:
+            nota = f"Diagnóstico Excel: {diagnostico}"
+            observaciones = f"{observaciones} | {nota}" if observaciones else nota
 
         resultado.filas_validas.append(
             {
@@ -93,8 +101,8 @@ def transformar(extraccion: Optional[ExtraccionHoja], registry: PacienteRegistry
                 "grupo_etario": derivar_grupo_etario_tamizaje(anios, anios * 12 + meses),
                 "tipo_dosaje": _resolver_tipo_dosaje(fila, columnas, hb_observado),
                 "hb_observado": hb_observado,
-                "hb_corregido": calcular_hb_corregido(hb_observado),
-                "observaciones": normalizar_texto(valor(fila, columnas, "observaciones")),
+                "hb_corregido": hb_corregido,
+                "observaciones": observaciones,
                 **campos_fijos_migracion(),
             }
         )

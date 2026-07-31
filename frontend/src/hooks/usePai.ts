@@ -6,7 +6,7 @@ import { getErrorMessage } from "@/lib/errors";
 import type { ApiResponse, Page } from "@/types/api";
 import type { CreatePaiInput, Pai, SubmoduloPai, UpdatePaiInput } from "@/types/pai";
 
-export function usePaiList(submodulo: SubmoduloPai, page: number, size = 10) {
+export function usePaiList(submodulo: SubmoduloPai, page: number, size = 50) {
   return useQuery({
     queryKey: [submodulo, "lista", page, size],
     queryFn: async () => {

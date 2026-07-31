@@ -19,7 +19,7 @@ export const PROGRAMAS: Record<ProgramaClave, ProgramaConfig> = {
     subtitulo: "Control de Crecimiento y Desarrollo",
     icon: HeartPulse,
     gradienteDesde: "#7C3AED",
-    gradienteHasta: "#5B21B6",
+    gradienteHasta: "#6D28D9",
     color: "#7C3AED",
   },
   pai: {
@@ -46,7 +46,7 @@ export const PROGRAMAS: Record<ProgramaClave, ProgramaConfig> = {
     subtitulo: "Control y tratamiento de anemia ferropénica",
     icon: Activity,
     gradienteDesde: "#EA580C",
-    gradienteHasta: "#9A3412",
+    gradienteHasta: "#C2410C",
     color: "#EA580C",
   },
   gestacional: {
@@ -55,7 +55,7 @@ export const PROGRAMAS: Record<ProgramaClave, ProgramaConfig> = {
     subtitulo: "Atención prenatal y control de gestantes",
     icon: Baby,
     gradienteDesde: "#BE123C",
-    gradienteHasta: "#881337",
+    gradienteHasta: "#9F1239",
     color: "#BE123C",
   },
 };

@@ -16,7 +16,7 @@ import type {
 const KEY_MENOR5 = "cred-menor5";
 const KEY_MAYOR5 = "cred-mayor5";
 
-export function useCredMenor5List(page: number, size = 10) {
+export function useCredMenor5List(page: number, size = 50) {
   return useQuery({
     queryKey: [KEY_MENOR5, "lista", page, size],
     queryFn: async () => {
@@ -71,7 +71,7 @@ export function useEliminarCredMenor5() {
   });
 }
 
-export function useCredMayor5List(page: number, size = 10) {
+export function useCredMayor5List(page: number, size = 50) {
   return useQuery({
     queryKey: [KEY_MAYOR5, "lista", page, size],
     queryFn: async () => {

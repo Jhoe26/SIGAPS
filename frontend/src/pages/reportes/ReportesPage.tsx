@@ -1,14 +1,11 @@
-import { FileSpreadsheet, FileText } from "lucide-react";
-import { toast } from "sonner";
+import { FileText } from "lucide-react";
 
 import { ChartCard } from "@/components/shared/ChartCard";
 import { ColoredBarChart } from "@/components/charts/ColoredBarChart";
 import { MultiSeriesBarChart, type SerieDefinicion } from "@/components/charts/MultiSeriesBarChart";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useDashboardResumen } from "@/hooks/useDashboard";
 import { useTamizajeResultados } from "@/hooks/useReporte";
-import { SECCIONES_REPORTES } from "@/lib/reportes";
 
 const SERIES_PROGRAMA: SerieDefinicion[] = [
   { key: "cred", label: "CRED", color: "#7C3AED" },
@@ -22,10 +19,6 @@ const COLOR_RESULTADO: Record<string, string> = {
   Negativos: "#16A34A",
   Pendientes: "#D97706",
 };
-
-function generarReporte() {
-  toast.info("Generación de reportes próximamente");
-}
 
 export default function ReportesPage() {
   const anioActual = new Date().getFullYear();
@@ -67,32 +60,14 @@ export default function ReportesPage() {
         </ChartCard>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {SECCIONES_REPORTES.map((seccion) => (
-          <Card key={seccion.titulo}>
-            <CardHeader>
-              <CardTitle className="text-base">{seccion.titulo}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              {seccion.items.map((item) => (
-                <div key={item.nombre} className="flex items-center justify-between rounded-md px-2 py-2 hover:bg-secondary/50">
-                  <span className="text-sm text-foreground">{item.nombre}</span>
-                  <div className="flex gap-1">
-                    <Button variant="outline" size="sm" onClick={generarReporte}>
-                      <FileText className="mr-1.5 h-3.5 w-3.5" />
-                      PDF
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={generarReporte}>
-                      <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
-                      XLS
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <FileText className="h-10 w-10 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Módulo de reportes en desarrollo — disponible próximamente
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

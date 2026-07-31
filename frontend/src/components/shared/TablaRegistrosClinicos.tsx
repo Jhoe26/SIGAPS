@@ -1,4 +1,5 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,6 +16,10 @@ export interface FilaClinica {
   fecha: string | null;
   estado: EstadoVisual;
   estadoEtiqueta?: string;
+  /** Reemplaza el badge de Estado por defecto (ej. diagnóstico clínico con su propio color). */
+  estadoBadge?: ReactNode;
+  /** Contenido de la columna extra opcional (ver `columnaExtra`). */
+  extra?: ReactNode;
   puedeEditar: boolean;
 }
 
@@ -23,13 +28,26 @@ interface TablaRegistrosClinicosProps {
   isLoading: boolean;
   onEditar: (id: number) => void;
   onEliminar: (id: number) => void;
+  onVer?: (id: number) => void;
+  /** Título de una columna adicional entre "Estado" y "Acciones"; se omite si no se pasa. */
+  columnaExtra?: string;
   emptyMessage?: string;
 }
 
-export function TablaRegistrosClinicos({ filas, isLoading, onEditar, onEliminar, emptyMessage }: TablaRegistrosClinicosProps) {
+export function TablaRegistrosClinicos({
+  filas,
+  isLoading,
+  onEditar,
+  onEliminar,
+  onVer,
+  columnaExtra,
+  emptyMessage,
+}: TablaRegistrosClinicosProps) {
   if (!isLoading && filas.length === 0) {
     return <EmptyState mensaje={emptyMessage ?? "Sin registros aún"} />;
   }
+
+  const totalColumnas = columnaExtra ? 7 : 6;
 
   return (
     <Table>
@@ -40,13 +58,14 @@ export function TablaRegistrosClinicos({ filas, isLoading, onEditar, onEliminar,
           <TableHead>Profesional</TableHead>
           <TableHead>Último control</TableHead>
           <TableHead>Estado</TableHead>
+          {columnaExtra && <TableHead>{columnaExtra}</TableHead>}
           <TableHead className="text-right">Acciones</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {isLoading && (
           <TableRow>
-            <TableCell colSpan={6} className="text-center text-muted-foreground">
+            <TableCell colSpan={totalColumnas} className="text-center text-muted-foreground">
               Cargando...
             </TableCell>
           </TableRow>
@@ -69,27 +88,40 @@ export function TablaRegistrosClinicos({ filas, isLoading, onEditar, onEliminar,
               <TableCell>{fila.profesionalNombre ?? "—"}</TableCell>
               <TableCell>{fila.fecha ?? "—"}</TableCell>
               <TableCell>
-                <EstadoBadge estado={fila.estado} etiqueta={fila.estadoEtiqueta} />
+                {fila.estadoBadge ?? <EstadoBadge estado={fila.estado} etiqueta={fila.estadoEtiqueta} />}
               </TableCell>
+              {columnaExtra && <TableCell>{fila.extra ?? "—"}</TableCell>}
               <TableCell className="text-right">
-                {fila.puedeEditar ? (
-                  <>
-                    <Button variant="ghost" size="icon" onClick={() => onEditar(fila.id)} aria-label="Editar">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => onEliminar(fila.id)}
-                      aria-label="Eliminar"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                ) : (
-                  <span className="text-xs text-muted-foreground">Sin acceso</span>
-                )}
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={!onVer}
+                    onClick={() => onVer?.(fila.id)}
+                    aria-label="Ver"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={!fila.puedeEditar}
+                    onClick={() => onEditar(fila.id)}
+                    aria-label="Editar"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={!fila.puedeEditar}
+                    onClick={() => onEliminar(fila.id)}
+                    className="hover:text-destructive"
+                    aria-label="Eliminar"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

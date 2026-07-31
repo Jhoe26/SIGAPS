@@ -7,7 +7,7 @@ from src.excel_reader import encontrar_hoja, leer_hoja_aplanada, listar_hojas
 from src.extractors.base import ExtraccionHoja, columnas_no_encontradas, resolver_columnas
 
 HOJA_LOGICA = "anemia"
-OBLIGATORIAS = ["dni", "fecha_inicio", "dx_inicial"]
+OBLIGATORIAS = ["dni", "fecha", "clasificacion"]
 
 
 def extraer(path) -> Optional[ExtraccionHoja]:

@@ -3,9 +3,9 @@ package pe.sigaps.common;
 import pe.sigaps.common.exception.ForbiddenException;
 
 /**
- * Regla de negocio #1 del prompt maestro: solo el creador de un registro clínico
- * puede editarlo/eliminarlo, y los registros históricos son inmutables para todos
- * (incluido ADMIN, que solo tiene lectura global).
+ * Regla de negocio: solo el creador de un registro clínico puede editarlo/eliminarlo,
+ * y los registros históricos son inmutables para todos (incluido ADMIN, que solo
+ * tiene lectura global).
  */
 public final class ReglaPropiedad {
 

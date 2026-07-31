@@ -8,7 +8,7 @@ import type { CreateTamizajeInput, TamizajeHb, UpdateTamizajeInput } from "@/typ
 
 const QUERY_KEY = "tamizaje";
 
-export function useTamizajeList(page: number, size = 10) {
+export function useTamizajeList(page: number, size = 50) {
   return useQuery({
     queryKey: [QUERY_KEY, "lista", page, size],
     queryFn: async () => {

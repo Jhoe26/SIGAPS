@@ -58,13 +58,17 @@ export const NAV_ITEMS: NavEntry[] = [
   { to: "/configuracion", label: "Configuración", icon: Settings, breadcrumb: ["Configuración"], adminOnly: true },
 ];
 
+function coincide(ruta: string, pathname: string): boolean {
+  return pathname === ruta || pathname.startsWith(`${ruta}/`);
+}
+
 export function encontrarMetaDePagina(pathname: string): { title: string; breadcrumb: string[] } | null {
   for (const item of NAV_ITEMS) {
-    if (!isNavGroup(item) && item.to === pathname) {
+    if (!isNavGroup(item) && coincide(item.to, pathname)) {
       return { title: item.label, breadcrumb: item.breadcrumb };
     }
     if (isNavGroup(item)) {
-      const hijo = item.children.find((child) => child.to === pathname);
+      const hijo = item.children.find((child) => coincide(child.to, pathname));
       if (hijo) {
         return { title: hijo.label, breadcrumb: hijo.breadcrumb };
       }

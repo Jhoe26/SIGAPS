@@ -36,8 +36,8 @@ export function TamizajePacientesSection({ senalNuevoRegistro }: SectionProps) {
     pacienteFechaNacimiento: r.paciente.fechaNacimiento,
     profesionalNombre: r.profesional?.nombreCompleto ?? null,
     fecha: r.fecha,
-    estado: r.esHistorico ? "inactivo" : r.tipoDosaje === "DOSAJE" ? "activo" : "pendiente",
-    estadoEtiqueta: r.esHistorico ? "Histórico" : r.tipoDosaje === "DOSAJE" ? "Con dosaje" : "Sin dosaje",
+    estado: r.tipoDosaje === "DOSAJE" ? "activo" : "pendiente",
+    estadoEtiqueta: r.tipoDosaje === "DOSAJE" ? "Con dosaje" : "Sin dosaje",
     puedeEditar: !r.esHistorico && r.registradoPor.id === usuarioActualId,
   }));
 

@@ -16,10 +16,12 @@ from dotenv import load_dotenv
 ETL_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(ETL_DIR / ".env")
 
-# --- Identidad de la migración (fijo, ver PROMPT_MAESTRO.md / db/schema.sql) ---
+# --- Identidad de la migración (fijo, ver db/schema.sql) ---
 USUARIO_MIGRACION_ID = 1
-FUENTE_ORIGEN = "EXCEL_2024_2025"
+FUENTE_ORIGEN = "EXCEL_ENFERMERIA_2024_2025"
+FUENTE_PADRON = "PADRON_ESSALUD_2026"
 ES_HISTORICO = True
+PADRON_TOTAL_ESPERADO = 50175
 
 # --- Validación de fechas ---
 ANIO_MIN = 1900
@@ -69,7 +71,7 @@ def cargar_config() -> Config:
         password = os.getenv("DB_PASS", "")
         db_url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{name}?charset=utf8mb4"
 
-    excel_path_raw = os.getenv("EXCEL_PATH", "../db/BD_ENF_CAPIIIM_1.xlsx")
+    excel_path_raw = os.getenv("EXCEL_PATH", "../db/BD_ENF_CAPIIIM_LIMPIO.xlsx")
     excel_path = Path(excel_path_raw)
     if not excel_path.is_absolute():
         excel_path = (ETL_DIR / excel_path).resolve()

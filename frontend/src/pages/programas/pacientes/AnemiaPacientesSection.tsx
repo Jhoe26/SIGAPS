@@ -1,11 +1,13 @@
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { DxAnemiaBadge } from "@/components/shared/DxAnemiaBadge";
 import { Pagination } from "@/components/shared/Pagination";
 import { TablaRegistrosClinicos, type FilaClinica } from "@/components/shared/TablaRegistrosClinicos";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAnemiaList, useEliminarAnemia } from "@/hooks/useAnemia";
+import { AnemiaDetalleDialog } from "@/pages/programas/pacientes/AnemiaDetalleDialog";
 import { AnemiaFormDialog } from "@/pages/programas/pacientes/AnemiaFormDialog";
 import { useAuthStore } from "@/stores/authStore";
 import type { Anemia } from "@/types/anemia";
@@ -14,18 +16,17 @@ interface SectionProps {
   senalNuevoRegistro: number;
 }
 
-const ETIQUETAS_ESTADO: Record<Anemia["estado"], string> = {
-  EN_TRATAMIENTO: "En tratamiento",
-  RECUPERADO: "Recuperado",
-  ABANDONO: "Abandono",
-  TRASLADADO: "Trasladado",
-};
+function truncar(texto: string, longitud: number): string {
+  return texto.length > longitud ? `${texto.slice(0, longitud)}...` : texto;
+}
 
 export function AnemiaPacientesSection({ senalNuevoRegistro }: SectionProps) {
   const usuarioActualId = useAuthStore((s) => s.user?.id);
   const [page, setPage] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [registroEnEdicion, setRegistroEnEdicion] = useState<Anemia | null>(null);
+  const [detalleOpen, setDetalleOpen] = useState(false);
+  const [registroEnVista, setRegistroEnVista] = useState<Anemia | null>(null);
 
   const { data, isLoading } = useAnemiaList(page);
   const eliminar = useEliminarAnemia();
@@ -44,8 +45,13 @@ export function AnemiaPacientesSection({ senalNuevoRegistro }: SectionProps) {
     pacienteFechaNacimiento: r.paciente.fechaNacimiento,
     profesionalNombre: r.profesional?.nombreCompleto ?? null,
     fecha: r.fechaInicio,
-    estado: r.esHistorico ? "inactivo" : r.estado === "EN_TRATAMIENTO" ? "en_tratamiento" : r.estado === "RECUPERADO" ? "activo" : "inactivo",
-    estadoEtiqueta: r.esHistorico ? "Histórico" : ETIQUETAS_ESTADO[r.estado],
+    estado: "pendiente",
+    estadoBadge: <DxAnemiaBadge dxInicial={r.dxInicial} estado={r.estado} />,
+    extra: r.observaciones ? (
+      <span title={r.observaciones}>{truncar(r.observaciones, 30)}</span>
+    ) : (
+      "—"
+    ),
     puedeEditar: !r.esHistorico && r.registradoPor.id === usuarioActualId,
   }));
 
@@ -58,6 +64,11 @@ export function AnemiaPacientesSection({ senalNuevoRegistro }: SectionProps) {
   const abrirEdicion = (id: number) => {
     setRegistroEnEdicion(data?.content.find((r) => r.id === id) ?? null);
     setDialogOpen(true);
+  };
+
+  const abrirVista = (id: number) => {
+    setRegistroEnVista(data?.content.find((r) => r.id === id) ?? null);
+    setDetalleOpen(true);
   };
 
   return (
@@ -81,6 +92,8 @@ export function AnemiaPacientesSection({ senalNuevoRegistro }: SectionProps) {
             isLoading={isLoading}
             onEditar={abrirEdicion}
             onEliminar={confirmarEliminar}
+            onVer={abrirVista}
+            columnaExtra="Observaciones"
             emptyMessage="Sin casos de anemia registrados"
           />
         </CardContent>
@@ -89,6 +102,7 @@ export function AnemiaPacientesSection({ senalNuevoRegistro }: SectionProps) {
       {data && <Pagination page={page} totalPages={data.totalPages} onChange={setPage} />}
 
       <AnemiaFormDialog open={dialogOpen} onOpenChange={setDialogOpen} registro={registroEnEdicion} />
+      <AnemiaDetalleDialog open={detalleOpen} onOpenChange={setDetalleOpen} registro={registroEnVista} />
     </div>
   );
 }

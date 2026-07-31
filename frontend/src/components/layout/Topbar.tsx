@@ -1,6 +1,8 @@
 import { Bell, ChevronRight, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
+import { GlobalSearchDialog } from "@/components/shared/GlobalSearchDialog";
 import { encontrarMetaDePagina } from "@/lib/navigation";
 import { iniciales } from "@/lib/edad";
 import { useAuthStore } from "@/stores/authStore";
@@ -8,6 +10,18 @@ import { useAuthStore } from "@/stores/authStore";
 export function Topbar() {
   const user = useAuthStore((s) => s.user);
   const location = useLocation();
+  const [buscadorAbierto, setBuscadorAbierto] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setBuscadorAbierto(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   if (!user) {
     return null;
@@ -34,17 +48,17 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="relative hidden sm:block">
+        <button
+          type="button"
+          onClick={() => setBuscadorAbierto(true)}
+          className="relative hidden h-9 w-60 items-center rounded-lg border border-input bg-background pl-9 pr-14 text-left text-sm text-muted-foreground transition-colors hover:border-active focus:outline-none focus:ring-2 focus:ring-ring sm:flex"
+        >
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            placeholder="Buscar..."
-            className="h-9 w-64 rounded-lg border border-input bg-background pl-9 pr-14 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          Buscar...
           <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-input bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
             ⌘K
           </kbd>
-        </div>
+        </button>
 
         <button
           type="button"
@@ -55,7 +69,7 @@ export function Topbar() {
         </button>
 
         <div className="flex items-center gap-2 border-l border-border pl-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-active text-xs font-semibold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-active text-xs font-semibold text-white">
             {iniciales(user.nombreCompleto)}
           </div>
           <div className="hidden min-w-0 text-sm leading-tight sm:block">
@@ -66,6 +80,8 @@ export function Topbar() {
           </div>
         </div>
       </div>
+
+      <GlobalSearchDialog open={buscadorAbierto} onOpenChange={setBuscadorAbierto} />
     </header>
   );
 }

@@ -43,8 +43,8 @@ export function PaiPacientesSection({ senalNuevoRegistro }: SectionProps) {
     pacienteFechaNacimiento: r.paciente.fechaNacimiento,
     profesionalNombre: r.profesional?.nombreCompleto ?? null,
     fecha: r.fechaAplicacion,
-    estado: r.esHistorico ? "inactivo" : r.tipoAplicacion === "REGULAR" ? "activo" : "pendiente",
-    estadoEtiqueta: r.esHistorico ? "Histórico" : r.tipoAplicacion === "REGULAR" ? "Regular" : "Barrido",
+    estado: r.tipoAplicacion === "REGULAR" ? "activo" : "pendiente",
+    estadoEtiqueta: r.tipoAplicacion === "REGULAR" ? "Regular" : "Barrido",
     puedeEditar: !r.esHistorico && r.registradoPor.id === usuarioActualId,
   }));
 

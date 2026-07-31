@@ -8,7 +8,7 @@ import type { Anemia, CreateAnemiaInput, UpdateAnemiaInput } from "@/types/anemi
 
 const QUERY_KEY = "anemia";
 
-export function useAnemiaList(page: number, size = 10) {
+export function useAnemiaList(page: number, size = 50) {
   return useQuery({
     queryKey: [QUERY_KEY, "lista", page, size],
     queryFn: async () => {

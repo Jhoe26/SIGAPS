@@ -4,9 +4,8 @@ from typing import Optional
 
 from src.dedup import PacienteRegistry
 from src.extractors.base import ExtraccionHoja, valor
-from src.normalizers import calcular_imc, normalizar_decimal, normalizar_entero, normalizar_talla_metros, normalizar_texto
+from src.normalizers import normalizar_decimal, normalizar_entero, normalizar_talla_metros, normalizar_texto
 from src.transformers.common import (
-    FilaDescartada,
     ResultadoTransformacion,
     campos_fijos_migracion,
     hoja_vacia,
@@ -14,6 +13,8 @@ from src.transformers.common import (
     resolver_dni_o_descartar,
     resolver_fecha_o_descartar,
 )
+
+DX_NUTRICIONAL_DEFAULT = "NORMAL"  # el Excel no trae esta columna; default seguro documentado (spec Fase G)
 
 HOJA_LOGICA_MENOR5 = "cred_menor5"
 HOJA_LOGICA_MAYOR5 = "cred_mayor5"
@@ -79,12 +80,7 @@ def transformar_menor5(extraccion: Optional[ExtraccionHoja], registry: PacienteR
             resultado.descartadas.append(error)
             continue
 
-        dx = _mapear(normalizar_texto(valor(fila, columnas, "dx_nutricional")), _DX_MENOR5_MAP)
-        if dx is None:
-            resultado.descartadas.append(
-                FilaDescartada(HOJA_LOGICA_MENOR5, fila_excel, dni, "dx_nutricional no reconocido")
-            )
-            continue
+        dx = _mapear(normalizar_texto(valor(fila, columnas, "dx_nutricional")), _DX_MENOR5_MAP) or DX_NUTRICIONAL_DEFAULT
 
         registrar_paciente(registry, fila, columnas, HOJA_LOGICA_MENOR5, fila_excel, dni, fecha_referencia=fecha)
 
@@ -128,12 +124,7 @@ def transformar_mayor5(extraccion: Optional[ExtraccionHoja], registry: PacienteR
             resultado.descartadas.append(error)
             continue
 
-        dx = _mapear(normalizar_texto(valor(fila, columnas, "dx_nutricional")), _DX_MAYOR5_MAP)
-        if dx is None:
-            resultado.descartadas.append(
-                FilaDescartada(HOJA_LOGICA_MAYOR5, fila_excel, dni, "dx_nutricional no reconocido")
-            )
-            continue
+        dx = _mapear(normalizar_texto(valor(fila, columnas, "dx_nutricional")), _DX_MAYOR5_MAP) or DX_NUTRICIONAL_DEFAULT
 
         registrar_paciente(registry, fila, columnas, HOJA_LOGICA_MAYOR5, fila_excel, dni, fecha_referencia=fecha)
 
@@ -148,7 +139,7 @@ def transformar_mayor5(extraccion: Optional[ExtraccionHoja], registry: PacienteR
                 "num_control": normalizar_entero(valor(fila, columnas, "num_control")),
                 "peso": peso,
                 "talla": talla_m,
-                "imc": calcular_imc(peso, talla_m),
+                "imc": normalizar_decimal(valor(fila, columnas, "imc")),
                 "riesgo_nutricional": _mapear(normalizar_texto(valor(fila, columnas, "riesgo_nutricional")), _RIESGO_MAP),
                 "dx_nutricional": dx,
                 "observaciones": normalizar_texto(valor(fila, columnas, "observaciones")),

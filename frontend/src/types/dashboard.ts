@@ -5,7 +5,7 @@ export interface StatCard {
   label: string;
   valor: number;
   subtexto: string;
-  tendenciaPct: number;
+  total: number;
 }
 
 export interface SerieProgramaPunto {

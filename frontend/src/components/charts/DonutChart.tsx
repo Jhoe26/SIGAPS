@@ -22,7 +22,7 @@ export function DonutChart({ data, colores, emptyMessage }: DonutChartProps) {
     <div className="flex flex-col items-center gap-4 sm:flex-row">
       <ResponsiveContainer width="100%" height={200} className="max-w-[200px]">
         <PieChart>
-          <Pie data={data} dataKey="valor" nameKey="categoria" innerRadius={50} outerRadius={80} paddingAngle={2}>
+          <Pie data={data} dataKey="valor" nameKey="categoria" innerRadius={60} outerRadius={90} paddingAngle={2}>
             {data.map((item, i) => (
               <Cell key={item.categoria} fill={colores?.[item.categoria] ?? PALETA_POR_DEFECTO[i % PALETA_POR_DEFECTO.length]} />
             ))}
